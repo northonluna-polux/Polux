@@ -19,14 +19,14 @@ jobs:
 
     steps:
       - name: Descargar el codigo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Python 3.12: es la version con la que se ha desarrollado y probado
       # el proyecto, y la que declara requirements.txt como minima (3.10+).
       # Se fija de forma explicita para que la compilacion sea reproducible
       # y no cambie cuando GitHub actualice la imagen de windows-latest.
       - name: Preparar Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -158,7 +158,7 @@ jobs:
           Write-Host " QUE NO SE HA VERIFICADO (requiere una persona)"
           Write-Host "======================================================="
           Write-Host " [  ] Que la interfaz se dibuje correctamente."
-          Write-Host " [  ] Que el mapa se renderice dentro de la ventana."
+          Write-Host " [  ] Que el mapa se abra en el navegador del sistema."
           Write-Host " [  ] Que se genere una hoja de ruta en PDF."
           Write-Host " [  ] Que los enlaces de Google Maps se abran."
           Write-Host " [  ] Que la geocodificacion funcione (necesita red)."
@@ -170,7 +170,7 @@ jobs:
       # Siempre se sube como artefacto, tambien en las ejecuciones manuales,
       # para poder descargar y probar el .exe sin publicar una Release.
       - name: Subir el ejecutable como artefacto
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: polux-windows
           path: dist/*.exe
@@ -180,7 +180,7 @@ jobs:
       # Solo al empujar una etiqueta se publica la Release.
       - name: Publicar la Release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/*.exe
           body_path: NOTAS_VERSION.md
