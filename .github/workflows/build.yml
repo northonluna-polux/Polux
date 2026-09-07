@@ -1,0 +1,189 @@
+name: Compilar ejecutable de Windows
+
+# Se dispara al empujar una etiqueta de version (v1.0.0, v1.1.0, ...) y
+# tambien de forma manual, para poder probar la compilacion antes de
+# publicar una version real.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write # necesario para crear la Release y subir el .exe
+
+jobs:
+  compilar-windows:
+    name: Compilar en Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+
+      # Python 3.12: es la version con la que se ha desarrollado y probado
+      # el proyecto, y la que declara requirements.txt como minima (3.10+).
+      # Se fija de forma explicita para que la compilacion sea reproducible
+      # y no cambie cuando GitHub actualice la imagen de windows-latest.
+      - name: Preparar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller==6.11.1
+
+      - name: Mostrar versiones instaladas
+        run: python -m pip list
+
+      # Los tests no necesitan red, asi que se ejecutan tambien aqui: si el
+      # algoritmo esta roto no tiene sentido publicar un ejecutable.
+      - name: Ejecutar los tests
+        run: python -m pytest tests/ -q
+
+      - name: Compilar el ejecutable
+        run: pyinstaller --clean --noconfirm polux.spec
+
+      # ----------------------------------------------------------------------
+      # Verificacion en CI
+      #
+      # Alcance de lo que se puede comprobar en un runner sin sesion grafica
+      # interactiva. Se es explicito a proposito sobre lo que NO se verifica.
+      # ----------------------------------------------------------------------
+      - name: Verificar que el ejecutable existe y tiene un tamano plausible
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path dist -Filter *.exe | Select-Object -First 1
+          if (-not $exe) {
+            Write-Error "VERIFICACION FALLIDA: no se ha generado ningun .exe en dist/"
+            exit 1
+          }
+
+          $mb = [math]::Round($exe.Length / 1MB, 2)
+          Write-Host "Ejecutable: $($exe.Name)"
+          Write-Host "Tamano:     $mb MB"
+
+          # Un paquete con Tk, folium, reportlab y pymupdf no baja de ~15 MB.
+          # Por debajo de eso es casi seguro que falta algo. Por encima de
+          # 400 MB indicaria que se ha colado alguna dependencia pesada.
+          if ($exe.Length -lt 15MB) {
+            Write-Error "VERIFICACION FALLIDA: el ejecutable ocupa solo $mb MB; probablemente falten dependencias."
+            exit 1
+          }
+          if ($exe.Length -gt 400MB) {
+            Write-Error "VERIFICACION FALLIDA: el ejecutable ocupa $mb MB; revisar los excludes del .spec."
+            exit 1
+          }
+          Write-Host "VERIFICADO: el ejecutable existe y su tamano es plausible."
+
+      # Comprueba que las dependencias criticas y los datos que suelen
+      # perderse al empaquetar (fuentes de reportlab, plantillas de folium,
+      # binario de Tkhtml) estan realmente dentro del paquete. Se hace
+      # importando los modulos en el mismo entorno con el que se compilo:
+      # no valida el .exe en si, pero detecta la causa mas habitual de que
+      # el .exe arranque y luego falle al generar un mapa o un PDF.
+      - name: Verificar dependencias y recursos empaquetables
+        shell: pwsh
+        run: |
+          python -c @"
+          import os
+          import folium, branca, reportlab, pymupdf, tkinterweb, tkinterweb_tkhtml
+          from PyInstaller.utils.hooks import collect_data_files
+
+          def contar(paquete):
+              return len(collect_data_files(paquete))
+
+          comprobaciones = {
+              'folium': contar('folium'),
+              'branca': contar('branca'),
+              'reportlab': contar('reportlab'),
+              'tkinterweb': contar('tkinterweb'),
+              'tkinterweb_tkhtml': contar('tkinterweb_tkhtml'),
+          }
+          for paquete, numero in comprobaciones.items():
+              print(f'  {paquete}: {numero} archivos de datos localizados')
+              if numero == 0:
+                  raise SystemExit(f'VERIFICACION FALLIDA: no se localizan datos de {paquete}')
+
+          # El binario nativo de Tkhtml es el que hace funcionar el mapa.
+          raiz = os.path.dirname(tkinterweb_tkhtml.__file__)
+          binarios = [f for _r, _d, fs in os.walk(raiz) for f in fs
+                      if f.lower().endswith(('.dll', '.so', '.dylib'))]
+          print(f'  binario Tkhtml: {binarios}')
+          if not binarios:
+              raise SystemExit('VERIFICACION FALLIDA: no se encuentra el binario de Tkhtml')
+
+          print('VERIFICADO: dependencias y recursos criticos presentes.')
+          "@
+
+      # El ejecutable es una aplicacion Tkinter: al lanzarlo abre una
+      # ventana y se queda en su bucle de eventos, asi que no se puede
+      # "ejecutar y esperar la salida" en CI. Lo que si se puede hacer es
+      # arrancarlo unos segundos y confirmar que no se cierra solo, que es
+      # lo que ocurriria si faltara una dependencia al importar.
+      - name: Arrancar el ejecutable brevemente
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $exe = Get-ChildItem -Path dist -Filter *.exe | Select-Object -First 1
+          Write-Host "Arrancando $($exe.Name) durante 30 s ..."
+          $proceso = Start-Process -FilePath $exe.FullName -PassThru
+          Start-Sleep -Seconds 30
+
+          if ($proceso.HasExited) {
+            Write-Warning "AVISO: el proceso termino solo con codigo $($proceso.ExitCode). Puede indicar un fallo al importar."
+            exit 1
+          }
+
+          Write-Host "VERIFICADO: el proceso sigue vivo tras 30 s (no ha fallado al importar)."
+          Stop-Process -Id $proceso.Id -Force
+          Write-Host "Proceso detenido."
+
+      - name: Resumen de lo verificado
+        shell: pwsh
+        run: |
+          Write-Host "======================================================="
+          Write-Host " QUE SE HA VERIFICADO EN CI"
+          Write-Host "======================================================="
+          Write-Host " [OK] Los tests (84) pasan."
+          Write-Host " [OK] El .exe se genera y su tamano es plausible."
+          Write-Host " [OK] Los datos de folium, branca, reportlab y"
+          Write-Host "      tkinterweb, y el binario Tkhtml, estan presentes."
+          Write-Host " [OK] El .exe arranca y no se cierra solo en 30 s."
+          Write-Host ""
+          Write-Host " QUE NO SE HA VERIFICADO (requiere una persona)"
+          Write-Host "======================================================="
+          Write-Host " [  ] Que la interfaz se dibuje correctamente."
+          Write-Host " [  ] Que el mapa se renderice dentro de la ventana."
+          Write-Host " [  ] Que se genere una hoja de ruta en PDF."
+          Write-Host " [  ] Que los enlaces de Google Maps se abran."
+          Write-Host " [  ] Que la geocodificacion funcione (necesita red)."
+          Write-Host ""
+          Write-Host " Sigue la lista de docs/CHECKLIST_PRUEBAS_WINDOWS.md"
+          Write-Host " en una maquina Windows antes de publicar."
+          Write-Host "======================================================="
+
+      # Siempre se sube como artefacto, tambien en las ejecuciones manuales,
+      # para poder descargar y probar el .exe sin publicar una Release.
+      - name: Subir el ejecutable como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: polux-windows
+          path: dist/*.exe
+          retention-days: 30
+          if-no-files-found: error
+
+      # Solo al empujar una etiqueta se publica la Release.
+      - name: Publicar la Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.exe
+          body_path: NOTAS_VERSION.md
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true

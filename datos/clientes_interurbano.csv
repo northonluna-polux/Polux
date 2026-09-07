@@ -1,0 +1,9 @@
+id,nombre,direccion,lat,lon,demanda,hora_inicio,hora_fin,tiempo_servicio
+1,Castellón de la Plana,"Castellón de la Plana, España",39.9864,-0.0513,12,08:00,13:00,30
+2,Tarragona,"Tarragona, España",41.1189,1.2445,10,09:00,17:00,30
+3,Barcelona,"Barcelona, España",41.3851,2.1734,15,10:00,19:00,30
+4,Zaragoza,"Zaragoza, España",41.6488,-0.8891,8,09:00,18:00,30
+5,Teruel,"Teruel, España",40.3440,-1.1069,14,08:00,16:00,30
+6,Cuenca,"Cuenca, España",40.0704,-2.1374,11,09:00,17:00,30
+7,Albacete,"Albacete, España",38.9943,-1.8585,9,09:00,18:00,30
+8,Alicante,"Alicante, España",38.3452,-0.4810,11,08:30,16:00,30

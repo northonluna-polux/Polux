@@ -1,0 +1,58 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# --- Entornos virtuales ---
+venv/
+.venv/
+env/
+.env
+ENV/
+
+# --- Pruebas y herramientas ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Editores e IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- macOS / Windows / Linux ---
+.DS_Store
+.AppleDouble
+Thumbs.db
+desktop.ini
+
+# --- Datos del usuario y salidas generadas ---
+# La caché de geocodificación contiene direcciones consultadas por el
+# usuario, así que no debe publicarse. En la aplicación empaquetada vive
+# fuera del proyecto (%LOCALAPPDATA%\Polux o ~/.polux), pero al ejecutar
+# desde el código fuente en versiones anteriores podía quedar aquí.
+datos/geocache.json
+
+# Resultados experimentales: se regeneran con los scripts de scripts/.
+resultados/
+
+# Exportaciones de prueba generadas por la propia aplicación.
+datos/*.pdf
+datos/*.html
+datos/resultado*.csv
+Ruta_*.pdf
+
+# --- Instancias de referencia de Solomon ---
+# No se redistribuyen: son datos de terceros (SINTEF) y se descargan con
+# `python3 scripts/descargar_instancias.py`.
+datos/benchmark/
