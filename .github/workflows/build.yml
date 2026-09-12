@@ -35,7 +35,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-          python -m pip install pyinstaller==6.11.1
+          python -m pip install pyinstaller==6.22.2
 
       - name: Mostrar versiones instaladas
         run: python -m pip list
@@ -120,28 +120,45 @@ jobs:
           print('VERIFICADO: dependencias y recursos criticos presentes.')
           "@
 
-      # El ejecutable es una aplicacion Tkinter: al lanzarlo abre una
-      # ventana y se queda en su bucle de eventos, asi que no se puede
-      # "ejecutar y esperar la salida" en CI. Lo que si se puede hacer es
-      # arrancarlo unos segundos y confirmar que no se cierra solo, que es
-      # lo que ocurriria si faltara una dependencia al importar.
-      - name: Arrancar el ejecutable brevemente
+      # Autocomprobacion del ejecutable ya empaquetado.
+      #
+      # Se ejecuta el propio .exe con --autocomprobacion, que no abre
+      # ninguna ventana: lee el CSV de ejemplo incluido, optimiza con una
+      # matriz sintetica, compone un PDF y genera un mapa, todo sin red.
+      # Asi se ejercitan de verdad pandas/numpy, las fuentes de reportlab y
+      # las plantillas de folium dentro del paquete.
+      #
+      # Sustituye a una comprobacion anterior que solo arrancaba el .exe y
+      # miraba si seguia vivo. Esa no servia: al compilarse sin consola, un
+      # fallo al importar abre un cuadro de dialogo de error y el proceso
+      # sigue vivo, de modo que un ejecutable roto pasaba por bueno.
+      - name: Autocomprobacion del ejecutable
         shell: pwsh
-        continue-on-error: true
         run: |
           $exe = Get-ChildItem -Path dist -Filter *.exe | Select-Object -First 1
-          Write-Host "Arrancando $($exe.Name) durante 30 s ..."
-          $proceso = Start-Process -FilePath $exe.FullName -PassThru
-          Start-Sleep -Seconds 30
+          Write-Host "Ejecutando $($exe.Name) --autocomprobacion ..."
 
-          if ($proceso.HasExited) {
-            Write-Warning "AVISO: el proceso termino solo con codigo $($proceso.ExitCode). Puede indicar un fallo al importar."
+          $proceso = Start-Process -FilePath $exe.FullName `
+                                   -ArgumentList "--autocomprobacion" `
+                                   -PassThru -NoNewWindow
+          if (-not $proceso.WaitForExit(180000)) {
+            Stop-Process -Id $proceso.Id -Force
+            Write-Error "VERIFICACION FALLIDA: la autocomprobacion no termino en 180 s."
             exit 1
           }
 
-          Write-Host "VERIFICADO: el proceso sigue vivo tras 30 s (no ha fallado al importar)."
-          Stop-Process -Id $proceso.Id -Force
-          Write-Host "Proceso detenido."
+          $registro = Join-Path (Get-Location) "polux_autocomprobacion.log"
+          if (Test-Path $registro) {
+            Write-Host "--- Detalle del fallo ---"
+            Get-Content $registro
+            Write-Host "-------------------------"
+          }
+
+          if ($proceso.ExitCode -ne 0) {
+            Write-Error "VERIFICACION FALLIDA: la autocomprobacion salio con codigo $($proceso.ExitCode)."
+            exit 1
+          }
+          Write-Host "VERIFICADO: el ejecutable lee el CSV, optimiza, genera un PDF y un mapa."
 
       - name: Resumen de lo verificado
         shell: pwsh
@@ -153,7 +170,8 @@ jobs:
           Write-Host " [OK] El .exe se genera y su tamano es plausible."
           Write-Host " [OK] Los datos de folium, branca, reportlab y"
           Write-Host "      tkinterweb, y el binario Tkhtml, estan presentes."
-          Write-Host " [OK] El .exe arranca y no se cierra solo en 30 s."
+          Write-Host " [OK] El .exe, ya empaquetado, lee el CSV de ejemplo,"
+          Write-Host "      optimiza, compone un PDF y genera un mapa."
           Write-Host ""
           Write-Host " QUE NO SE HA VERIFICADO (requiere una persona)"
           Write-Host "======================================================="

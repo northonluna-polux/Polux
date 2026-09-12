@@ -52,7 +52,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-python -m pip install pyinstaller==6.11.1
+python -m pip install pyinstaller==6.22.2
 if errorlevel 1 (
     echo ERROR: fallo la instalacion de PyInstaller.
     exit /b 1
