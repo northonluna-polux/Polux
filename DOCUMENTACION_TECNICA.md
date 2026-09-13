@@ -20,6 +20,7 @@ Polux is a desktop application that solves a **Vehicle Routing Problem with Time
 Two external, free web services are used at runtime:
 - **OSRM** (`router.project-osrm.org`) — real driving distances/times and road-following route geometry.
 - **Nominatim** (`nominatim.openstreetmap.org`) — turns a free-text address into coordinates.
+- **Esri ArcGIS Online** (`server.arcgisonline.com`) — the map's basemap tiles. OpenStreetMap's own tile servers are deliberately *not* used: their usage policy reserves them for openstreetmap.org and its community and forbids applications from drawing on them, which ends in a hard block. CARTO was evaluated as the alternative and rejected — its basemaps now require an API key and return tiles stamped "API KEY REQUIRED" while still answering HTTP 200, so the failure is invisible to a status-code check and only shows up on screen.
 
 ---
 

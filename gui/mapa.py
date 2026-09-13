@@ -11,6 +11,27 @@ import folium
 from datos.modelos import ClienteNoAsignado, Nodo, Ruta, minutos_a_hhmm
 from utils.osrm import ErrorEnrutamiento, obtener_geometria_ruta
 
+#: Proveedor de las teselas (el fondo cartográfico) del mapa.
+#:
+#: **No** se usan los servidores de OpenStreetMap. Su política de uso los
+#: reserva a openstreetmap.org y a su comunidad, y prohíbe que las
+#: aplicaciones tiren de ellos, porque están mantenidos por voluntarios.
+#: Hacerlo termina en un bloqueo con el mensaje "app is not following the
+#: tile usage policy of OpenStreetMap's volunteer run servers".
+#:
+#: Tampoco sirve CARTO: sus mapas base pasaron a exigir clave de API y
+#: devuelven las teselas con un "API KEY REQUIRED" sobreimpreso, aunque la
+#: petición responda con un código 200.
+#:
+#: Se usan los mapas base de Esri (ArcGIS Online), accesibles sin clave y
+#: sin necesidad de cabecera `Referer`, lo que importa porque el mapa se
+#: abre como archivo local (`file://`). folium añade su atribución
+#: automáticamente.
+#:
+#: Alternativa si se prefiere que las rutas destaquen más sobre un fondo
+#: apagado, a costa de perder detalle de calles: "Esri.WorldGrayCanvas".
+PROVEEDOR_TESELAS = "Esri.WorldStreetMap"
+
 #: Paleta de colores utilizada para diferenciar cada ruta en el mapa
 PALETA_COLORES_RUTAS = [
     "blue",
@@ -54,7 +75,7 @@ def generar_mapa(
         obtenerse de OSRM.
     """
     advertencias: list[str] = []
-    mapa = folium.Map(location=[depot.lat, depot.lon], zoom_start=12, tiles="OpenStreetMap")
+    mapa = folium.Map(location=[depot.lat, depot.lon], zoom_start=12, tiles=PROVEEDOR_TESELAS)
 
     folium.Marker(
         location=[depot.lat, depot.lon],
@@ -147,7 +168,7 @@ def generar_mapa_vacio(depot: Nodo, clientes: list[Nodo], ruta_salida_html: str)
     Returns:
         La ruta del archivo HTML generado.
     """
-    mapa = folium.Map(location=[depot.lat, depot.lon], zoom_start=12, tiles="OpenStreetMap")
+    mapa = folium.Map(location=[depot.lat, depot.lon], zoom_start=12, tiles=PROVEEDOR_TESELAS)
 
     folium.Marker(
         location=[depot.lat, depot.lon],

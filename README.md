@@ -149,12 +149,16 @@ Detalle de cada columna:
 
 ## Aviso sobre los servicios externos
 
-Polux consulta dos servicios públicos de OpenStreetMap:
+Polux consulta estos servicios externos:
 
 - **OSRM** (`router.project-osrm.org`) para las distancias y tiempos por
   carretera.
 - **Nominatim** (`nominatim.openstreetmap.org`) para convertir direcciones
   en coordenadas.
+- **Esri ArcGIS Online** (`server.arcgisonline.com`) para el fondo
+  cartográfico del mapa. No se usan los servidores de teselas de
+  OpenStreetMap porque su política de uso los reserva a su propia web y
+  prohíbe que las aplicaciones tiren de ellos: hacerlo acaba en un bloqueo.
 
 Son **instancias de demostración, sin ningún compromiso de disponibilidad**.
 Funcionan bien para probar la aplicación y para un uso ocasional, pero:

@@ -50,6 +50,9 @@ arranques.
 - **El mapa interactivo se abre en el navegador**, no dentro de la ventana:
   el visor HTML integrado no ejecuta JavaScript y los mapas se dibujan con
   Leaflet, que lo necesita. La aplicación incluye un botón para abrirlo.
+- El **fondo del mapa** procede de Esri ArcGIS Online. No se usan las
+  teselas de OpenStreetMap porque su política de uso no permite que las
+  aplicaciones las consuman.
 - **OSRM y Nominatim son instancias públicas de demostración**, sin
   garantía de disponibilidad. OSRM limita la matriz a 100 ubicaciones por
   consulta y Nominatim a una petición por segundo. Para uso continuado hay
