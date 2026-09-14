@@ -26,6 +26,7 @@ from datos.cargador import ID_DEPOT_RESERVADO, ErrorCargaDatos, cargar_clientes_
 from datos.modelos import ClienteNoAsignado, Nodo
 from gui.dialogo_progreso import DialogoProgreso
 from gui.mapa import generar_mapa, generar_mapa_vacio
+from gui.marco_desplazable import MarcoDesplazable
 from gui.panel_config import PanelConfiguracion
 from gui.panel_resultados import PanelResultados
 from gui.panel_resumen import PanelResumen
@@ -58,16 +59,20 @@ class VentanaPrincipal(tk.Tk):
         panel_dividido = ttk.PanedWindow(self, orient="horizontal")
         panel_dividido.pack(fill="both", expand=True)
 
-        columna_izquierda = ttk.Frame(panel_dividido)
+        # Las dos columnas laterales van dentro de un marco desplazable: su
+        # contenido necesita unos 900 px de alto, más de lo que ofrece la
+        # pantalla de un portátil, y sin desplazamiento los controles de
+        # abajo quedaban fuera de la ventana sin forma de alcanzarlos.
+        columna_izquierda = MarcoDesplazable(panel_dividido)
         self.panel_config = PanelConfiguracion(
-            columna_izquierda,
+            columna_izquierda.interior,
             al_cargar_csv=self._al_cargar_csv,
             al_optimizar=self._al_optimizar,
             al_cambiar_config=self._al_cambiar_configuracion,
         )
         self.panel_config.pack(fill="x")
-        ttk.Separator(columna_izquierda, orient="horizontal").pack(fill="x", pady=4)
-        self.panel_resumen = PanelResumen(columna_izquierda)
+        ttk.Separator(columna_izquierda.interior, orient="horizontal").pack(fill="x", pady=4)
+        self.panel_resumen = PanelResumen(columna_izquierda.interior)
         self.panel_resumen.pack(fill="both", expand=True)
         panel_dividido.add(columna_izquierda, weight=0)
 
@@ -92,8 +97,8 @@ class VentanaPrincipal(tk.Tk):
         self.marco_mapa.pack(fill="both", expand=True)
         panel_dividido.add(columna_central, weight=3)
 
-        columna_derecha = ttk.Frame(panel_dividido)
-        self.panel_resultados = PanelResultados(columna_derecha)
+        columna_derecha = MarcoDesplazable(panel_dividido)
+        self.panel_resultados = PanelResultados(columna_derecha.interior)
         self.panel_resultados.pack(fill="both", expand=True)
         panel_dividido.add(columna_derecha, weight=1)
 

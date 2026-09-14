@@ -52,6 +52,10 @@ ESCALA_RENDERIZADO = 2.0
 #: Ancho máximo en píxeles de la imagen mostrada, para que quepa en la ventana
 ANCHO_MAXIMO_VISTA = 780
 
+#: Píxeles que se reservan para la barra superior, la de botones y el marco
+#: de la ventana al calcular cuánto alto queda para la página.
+ALTO_RESERVADO_CONTROLES = 190
+
 
 class DialogoPrevisualizacion(tk.Toplevel):
     """Ventana modal que previsualiza, guarda e imprime las hojas de ruta."""
@@ -90,9 +94,20 @@ class DialogoPrevisualizacion(tk.Toplevel):
 
         self.grab_set()
 
+    def _alto_maximo_pagina(self) -> int:
+        """
+        Alto máximo, en píxeles, que puede ocupar la imagen de la página.
+
+        Se calcula a partir de la pantalla y no con una constante fija: una
+        hoja A4 rasterizada mide más que la altura útil de un portátil, y si
+        no se acota, la ventana crece tanto que la barra de botones queda
+        fuera de la pantalla y no hay forma de guardar ni imprimir.
+        """
+        return max(320, self.winfo_screenheight() - ALTO_RESERVADO_CONTROLES)
+
     def _construir_widgets(self) -> None:
         marco_superior = ttk.Frame(self, padding=(10, 8))
-        marco_superior.pack(fill="x")
+        marco_superior.pack(side="top", fill="x")
 
         self.var_contador = tk.StringVar(value="—")
         ttk.Label(
@@ -108,11 +123,15 @@ class DialogoPrevisualizacion(tk.Toplevel):
         )
         self._boton_siguiente.pack(side="right")
 
-        self._etiqueta_pagina = ttk.Label(self, relief="sunken", anchor="center")
-        self._etiqueta_pagina.pack(fill="both", expand=True, padx=10, pady=(0, 8))
-
+        # La barra de acciones se empaqueta ANTES que la imagen y anclada
+        # abajo. Al empaquetarla la última, como estaba, era lo primero que
+        # se salía de la pantalla cuando la página no cabía, dejando los
+        # botones de guardar e imprimir inalcanzables.
         marco_acciones = ttk.Frame(self, padding=(10, 0, 10, 10))
-        marco_acciones.pack(fill="x")
+        marco_acciones.pack(side="bottom", fill="x")
+
+        self._etiqueta_pagina = ttk.Label(self, relief="sunken", anchor="center")
+        self._etiqueta_pagina.pack(side="top", fill="both", expand=True, padx=10, pady=(0, 8))
         ttk.Button(marco_acciones, text="Guardar PDF", command=self._guardar).pack(
             side="left", expand=True, fill="x", padx=(0, 4)
         )
@@ -147,8 +166,13 @@ class DialogoPrevisualizacion(tk.Toplevel):
                     imagen = tk.PhotoImage(data=mapa_bits.tobytes("ppm"))
 
                     # PhotoImage solo permite reducir por factores enteros;
-                    # se aplica el menor factor que quepa en el ancho máximo.
-                    factor_reduccion = max(1, -(-mapa_bits.width // ANCHO_MAXIMO_VISTA))
+                    # se aplica el menor factor que haga caber la página
+                    # tanto de ancho como de alto. Acotar solo el ancho, como
+                    # se hacía antes, dejaba una imagen demasiado alta para
+                    # la pantalla.
+                    factor_ancho = -(-mapa_bits.width // ANCHO_MAXIMO_VISTA)
+                    factor_alto = -(-mapa_bits.height // self._alto_maximo_pagina())
+                    factor_reduccion = max(1, factor_ancho, factor_alto)
                     if factor_reduccion > 1:
                         imagen = imagen.subsample(factor_reduccion, factor_reduccion)
 

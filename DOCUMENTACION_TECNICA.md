@@ -46,6 +46,7 @@ polux/
 │   ├── panel_config.py          # Left panel: depot, fleet, driver, load/optimize
 │   ├── panel_resumen.py         # Pre-optimization summary (live)
 │   ├── panel_resultados.py      # Results panel + all exports
+│   ├── marco_desplazable.py     # Reusable vertically-scrollable container
 │   ├── mapa.py                  # Interactive map generation (folium)
 │   ├── pdf_rutas.py             # Printable PDF route sheets (reportlab)
 │   ├── dialogo_previsualizacion.py  # Preview / save / print the route sheets
@@ -259,6 +260,8 @@ Four deliberate differences from the app's normal data path:
 
 Built entirely in Tkinter (`ttk` widgets), laid out as three columns in a `PanedWindow` inside `app.py`'s `VentanaPrincipal`.
 
+Both side columns sit inside a `MarcoDesplazable` (§7.8): between them they ask for roughly 900 px of height, more than a laptop screen offers, and without scrolling the controls at the bottom — load CSV, optimize, the CSV/HTML export buttons — simply fell outside the window with no way to reach them.
+
 ### 7.1 `app.py` — orchestration
 
 This is where every other piece gets wired together. The key methods, in the order a user would actually trigger them:
@@ -320,9 +323,21 @@ A modal window that generates every route sheet in memory, rasterizes all their 
 
 PyMuPDF ships as a binary wheel from PyPI (no system dependency) and rasterizes the exact PDF that gets saved. The tradeoff accepted in exchange is one more Python dependency, and PyMuPDF's AGPL/commercial licensing — fine for an academic project, but worth revisiting for closed-source redistribution.
 
-One Tk detail worth knowing: `tk.PhotoImage` can only downscale by whole-number factors, so the code picks the smallest integer `subsample` factor that fits the page within `ANCHO_MAXIMO_VISTA`. A reference to each image is also kept on the label, because Tk does not hold one itself and the image would otherwise be garbage-collected mid-display.
+One Tk detail worth knowing: `tk.PhotoImage` can only downscale by whole-number factors, so the code picks the smallest integer `subsample` factor that fits the page **both** within `ANCHO_MAXIMO_VISTA` and within `_alto_maximo_pagina()` — the screen height minus the room the surrounding controls need. Bounding only the width, as an earlier version did, left an A4 page taller than a laptop screen, which pushed the action bar off the bottom of the display and made saving and printing unreachable. For the same reason the action bar is packed **before** the image and anchored to the bottom: in Tk the last widget packed is the first to be squeezed out. A reference to each image is also kept on the label, because Tk does not hold one itself and the image would otherwise be garbage-collected mid-display.
 
-### 7.8 `dialogo_progreso.py` — the one reusable widget
+### 7.8 `marco_desplazable.py` — the scrollable container
+
+Tkinter has no scrollable frame, so this is the usual construction: a `Canvas` that can scroll, with an ordinary `Frame` placed inside it as a canvas window. Children are added to `.interior`, never to the container itself.
+
+Three details make it behave:
+
+- **`grid`, not `pack`.** With `pack`, the canvas goes first and expands, so whenever its requested width exceeds the pane's, it claims the whole cavity and the scrollbar never gets mapped at all. Under `grid` the scrollbar's column is reserved, and `grid_remove` hides it without losing its position.
+- **The canvas propagates the interior's requested *width*.** An empty `Canvas` asks for a fixed default (~265 px), far narrower than these panels, so the parent `PanedWindow` would reserve that and clip the labels. Only the width is propagated — the height is precisely what this container exists not to impose.
+- **The scrollbar only appears when it is needed**, so it neither steals width nor implies hidden content when there is none.
+
+The mouse wheel is bound only while the pointer is over the canvas, so it doesn't steal scrolling from the other panels, and it handles the three platform conventions: `Button-4`/`Button-5` on Linux, and `MouseWheel` with different `delta` scales on macOS and Windows.
+
+### 7.9 `dialogo_progreso.py` — the one reusable widget
 
 A small modal `Toplevel` with a progress bar that starts indeterminate (spinning, since we don't yet know how many addresses need geocoding) and switches to determinate once the real count is known — used exclusively during CSV loading when addresses need to be resolved.
 

@@ -40,8 +40,18 @@ class PanelResumen(ttk.Frame):
         ttk.Label(self, text="Advertencias", font=("TkDefaultFont", 10, "bold")).pack(
             anchor="w", pady=(10, 2)
         )
+        # `width=1` es deliberado: un `Text` pide 80 caracteres de ancho por
+        # omisión (unos 590 px) y eso arrastraba a toda la columna, que se
+        # comía el espacio del mapa. Como se empaqueta con `fill="x"`, acaba
+        # ocupando el ancho real de la columna de todos modos.
         self.texto_advertencias = tk.Text(
-            self, height=6, wrap="word", state="disabled", background="#fff8e1", relief="flat"
+            self,
+            height=6,
+            width=1,
+            wrap="word",
+            state="disabled",
+            background="#fff8e1",
+            relief="flat",
         )
         self.texto_advertencias.pack(fill="both", expand=True)
 

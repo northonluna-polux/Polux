@@ -98,7 +98,10 @@ class PanelResultados(ttk.Frame):
         ttk.Label(self, text="Secuencia de la ruta seleccionada", font=("TkDefaultFont", 10, "bold")).pack(
             anchor="w"
         )
-        self.texto_detalle_ruta = tk.Text(self, height=6, wrap="word", state="disabled")
+        # `width=1`: sin esto el `Text` pide 80 caracteres (unos 590 px) y
+        # fuerza el ancho de toda la columna de resultados. Se estira solo
+        # con el `fill="x"` del empaquetado.
+        self.texto_detalle_ruta = tk.Text(self, height=6, width=1, wrap="word", state="disabled")
         self.texto_detalle_ruta.pack(fill="both", expand=False, pady=(2, 10))
 
         ttk.Label(self, text="Clientes sin asignar", font=("TkDefaultFont", 10, "bold")).pack(
@@ -120,7 +123,7 @@ class PanelResultados(ttk.Frame):
             anchor="w"
         )
         self.texto_advertencias = tk.Text(
-            self, height=4, wrap="word", state="disabled", background="#fff8e1"
+            self, height=4, width=1, wrap="word", state="disabled", background="#fff8e1"
         )
         self.texto_advertencias.pack(fill="both", expand=False, pady=(2, 10))
 
