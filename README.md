@@ -187,6 +187,10 @@ abusar de un recurso comunitario gratuito.
   con los cuatro fragmentos de código que concentran las decisiones
   algorítmicas, citados literalmente del código fuente. Se regenera con
   `python scripts/generar_anexo_codigo.py`.
+- [`docs/ANEXO_B_RESULTADOS.docx`](docs/ANEXO_B_RESULTADOS.docx) — anexo de la
+  memoria con las tablas de resultados instancia a instancia, construidas a
+  partir de los archivos de `resultados/`. Se regenera con
+  `python scripts/generar_anexo_resultados.py`.
 - [`DOCUMENTACION_TECNICA.md`](DOCUMENTACION_TECNICA.md) — arquitectura,
   algoritmo, decisiones de diseño y limitaciones conocidas, en detalle.
 - [`docs/CHECKLIST_PRUEBAS_WINDOWS.md`](docs/CHECKLIST_PRUEBAS_WINDOWS.md) —
