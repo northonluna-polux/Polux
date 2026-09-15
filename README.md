@@ -183,6 +183,10 @@ abusar de un recurso comunitario gratuito.
   con capturas de pantalla: cómo preparar el CSV, configurar la jornada,
   interpretar los resultados y exportar las hojas de ruta. Se regenera con
   `python scripts/generar_manual.py`.
+- [`docs/ANEXO_A_CODIGO.docx`](docs/ANEXO_A_CODIGO.docx) — anexo de la memoria
+  con los cuatro fragmentos de código que concentran las decisiones
+  algorítmicas, citados literalmente del código fuente. Se regenera con
+  `python scripts/generar_anexo_codigo.py`.
 - [`DOCUMENTACION_TECNICA.md`](DOCUMENTACION_TECNICA.md) — arquitectura,
   algoritmo, decisiones de diseño y limitaciones conocidas, en detalle.
 - [`docs/CHECKLIST_PRUEBAS_WINDOWS.md`](docs/CHECKLIST_PRUEBAS_WINDOWS.md) —
