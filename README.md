@@ -179,6 +179,10 @@ abusar de un recurso comunitario gratuito.
 
 ## Documentación
 
+- [`docs/MANUAL_USUARIO.docx`](docs/MANUAL_USUARIO.docx) — manual de usuario
+  con capturas de pantalla: cómo preparar el CSV, configurar la jornada,
+  interpretar los resultados y exportar las hojas de ruta. Se regenera con
+  `python scripts/generar_manual.py`.
 - [`DOCUMENTACION_TECNICA.md`](DOCUMENTACION_TECNICA.md) — arquitectura,
   algoritmo, decisiones de diseño y limitaciones conocidas, en detalle.
 - [`docs/CHECKLIST_PRUEBAS_WINDOWS.md`](docs/CHECKLIST_PRUEBAS_WINDOWS.md) —
